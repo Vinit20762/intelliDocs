@@ -16,7 +16,7 @@ export default async function Home() {
             <UserButton afterSignOutUrl="/" />
           </div>
           <div className="flex mt-2">
-            {isAuth &&  <Button>Go to Chat</Button>}
+            {isAuth &&  <Button className="hover: cursor-pointer">Go to Chat</Button>}
           </div>
            <p className="max-w-xl mt-1 text-lg text-slate-600">
             Join millions of students, researchers and professionals to instantly
