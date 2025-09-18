@@ -1,3 +1,4 @@
+import FileUplaod from "@/components/FileUplaod";
 import { Button } from "@/components/ui/button";
 import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
@@ -23,9 +24,11 @@ export default async function Home() {
             answer questions and understand research with AI
           </p>
           <div className="w-full mt-4">
-            {isAuth ? (<h1>fileupload</h1>) : (
+            {isAuth ? (
+              <FileUplaod />
+            ) : (
               <Link href="/sign-in">
-                <Button className="hover: cursor">Login to get Started!
+                <Button className="hover: cursor-pointer">Login to get Started!
                   <LogIn />
                 </Button>
               </Link>
