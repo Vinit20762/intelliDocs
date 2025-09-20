@@ -11,3 +11,5 @@ export function convertToAscii(inputString: string){
     return asciiString
 }
 
+
+
