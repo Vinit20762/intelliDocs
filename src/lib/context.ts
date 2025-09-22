@@ -9,7 +9,7 @@ export async function getMatchesFromEmbeddings(embeddings: number[], fileKey: st
 
   // attach namespace here not in wuery result
   const namespace = convertToAscii(fileKey);
-  const index = pinecone.Index("intelliDocs", namespace);
+  const index = pinecone.Index("intellidocs", namespace);
 
   try {
     const queryResult = await index.query({
