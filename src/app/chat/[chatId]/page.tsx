@@ -9,18 +9,25 @@ import { redirect } from 'next/navigation';
 import React from 'react';
 
 type Props = {
-  params: Promise<{ chatId: string }>; // ✅ params is async, use Promise
+  params: {
+     chatId: string 
+    };
 };
 
-const ChatPage = async ({ params }: Props) => {
-  const { chatId } = await params; // ✅ await params
-  const { userId } = await auth();
+const ChatPage = async (props: Props) => {
+    const { params } = props;
+    const { chatId } = await params;
+
+    const { userId } = await auth();
 
   if (!userId) {
     return redirect('/sign-in');
   }
 
   const _chats = await db.select().from(chats).where(eq(chats.userId, userId));
+  if(!_chats){
+    return redirect('/');
+  }
 
   if (!_chats.find(chat => chat.id === parseInt(chatId))) {
     return redirect('/');
@@ -31,6 +38,7 @@ const ChatPage = async ({ params }: Props) => {
   return (
     <div className="flex max-h-screen overflow-scroll">
       <div className="flex w-full max-h-screen overflow-scroll">
+        
         {/* chat sidebar */}
         <div className="flex-[1] max-w-xs">
           <ChatSideBar chats={_chats} chatId={parseInt(chatId)} />

@@ -26,29 +26,46 @@ type PDFPage = {
 
 export async function loadS3IntoPinecone(fileKey: string) {
   // 1. Download PDF from S3
-  console.log('Downloading S3 file...');
+  console.log('Starting PDF processing for file key:', fileKey);
+  console.log('Downloading from S3...');
   const file_name = await downloadFromS3(fileKey);
-  if (!file_name) throw new Error("Could not download from S3");
+  if (!file_name) {
+    throw new Error("Could not download from S3");
+  }
+  console.log('Successfully downloaded file from S3');
 
+  // 2. Load PDF i used langchain and pdf-parse
+  console.log('Loading PDF content...');
   const loader = new PDFLoader(file_name);
   const pages = (await loader.load()) as PDFPage[];
+  console.log(`Successfully loaded PDF with ${pages.length} pages`);
 
-  // 2. Split PDF pages into documents
-  const documents = await Promise.all(pages.map(prepareDocument));
+  // 2. Split PDF pages into chunked documents
+  const documents = await Promise.all(pages.map(prepareDocument));  //calling prepareDocument function for each page to split into smaller chunks
 
-  // 3. Embed documents
+  // 3. vectorize and Embed individual documents 
   const vectors = await Promise.all(documents.flat().map(embedDocument));
 
-  // 4. Upload to Pinecone
+  // 4. Upload to PineconeDb  
   const client = await getPineconeClient();
   const pineconeIndex = client.index('intellidocs');
-  const namespace = convertToAscii(fileKey);
+  const namespace = convertToAscii(fileKey);   //if the file key has special char then it will l give error so we convert it to ascii
 
   console.log('Inserting vectors into Pinecone...');
   await chunkedUpsert(pineconeIndex, vectors, namespace, 10);
 
   return documents[0];
 }
+
+// Vectors
+type Vector = {
+  id: string;
+  values: number[];
+  metadata: {
+    text: string;
+    pageNumber: number;
+  };
+};
 
 async function embedDocument(doc: Document) {
   const embeddings = await getEmbeddings(doc.pageContent);
@@ -63,20 +80,24 @@ async function embedDocument(doc: Document) {
       text: doc.metadata.text,
       pageNumber: doc.metadata.pageNumber
     }
-  };
+  } as Vector;
 }
 
+// Pinecone has a limit of 36kb per vector metadata, so we truncate to be safe  
 export const truncateStringByBytes = (str: string, bytes: number) => {
   const enc = new TextEncoder();
-  return new TextDecoder('utf-8').decode(enc.encode(str).slice(0, bytes));
+  return new TextDecoder('utf-8').decode(enc.encode(str).slice(0, bytes)); 
 };
 
+
+// Prepare each PDF page by cleaning and splitting into smaller documents @pinecone-database/doc-splitter gives utility fucntion to help split out document
 async function prepareDocument(page: PDFPage) {
   let { pageContent, metadata } = page;
   pageContent = pageContent.replace(/\n/g, '');
 
-  const splitter = new RecursiveCharacterTextSplitter();
-  const docs = await splitter.splitDocuments([
+  //split the docs into smaller chunks
+  const splitter = new RecursiveCharacterTextSplitter();      // @pinecone/doc-spliter has this function to split the document into smaller chunks
+  const docs = await splitter.splitDocuments([       
     new Document({
       pageContent,
       metadata: {
@@ -85,7 +106,6 @@ async function prepareDocument(page: PDFPage) {
       }
     })
   ]);
-
   return docs;
 }
 

@@ -49,7 +49,7 @@ const FileUplaod = () => {
                 }
                 mutate(data, {
                     onSuccess: ({chat_id}) => {
-                        toast.success("chat Creatd");
+                        toast.success("Chat created");
                         router.push(`/chat/${chat_id}`)
                     },
                     onError: (err) => {
@@ -75,6 +75,7 @@ const FileUplaod = () => {
             <input {...getInputProps()} />
             {(uploading || isPending) ? (
                 <>
+                    {/* Loading State */}
                     <Loader2 className='h-10 w-10 text-blue-500 animate-spin'/>
                     <p className='mt-2 text-sm text-slate-400'>
                         Spilling Tea to GPT...

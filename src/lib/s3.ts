@@ -2,8 +2,8 @@ import AWS from 'aws-sdk';
 
 // this function contains the function to actually load in the s3 configuration
 
-export async function uploadToS3(file: File){
-    try {
+export async function uploadToS3(file: File){    //this is standard web api for file upload
+    try { 
         AWS.config.update({                                            //configuring the AWS object, after configuring it we can use s3 objkect
             accessKeyId: process.env.NEXT_PUBLIC_S3_ACCESS_KEY_ID,
             secretAccessKey: process.env.NEXT_PUBLIC_S3_SECRET_ACCESS_KEY
@@ -23,7 +23,7 @@ export async function uploadToS3(file: File){
             Body: file
         }
 
-        const upload = s3.putObject(params).on('httpDownloadProgress', evt => {                 //progress check
+        const upload = s3.putObject(params).on('httpUploadProgress', evt => {                 //progress check
             console.log("Uploading to s3...", parseInt(((evt.loaded*100)/evt.total).toString())) + "%"
         }).promise()
 

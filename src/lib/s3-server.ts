@@ -1,10 +1,10 @@
 import AWS from 'aws-sdk'
 import fs from 'fs'
-export async function downloadFromS3(file_key: string){
+export async function downloadFromS3(file_key: string){    //this file only run on server
     try {
         AWS.config.update({
-            accessKeyId: process.env.NEXT_PUBLIC_S3_ACCESS_KEY_ID,
-            secretAccessKey: process.env.NEXT_PUBLIC_S3_SECRET_ACCESS_KEY
+            accessKeyId: process.env.NEXT_PUBLIC_S3_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.NEXT_PUBLIC_S3_SECRET_ACCESS_KEY!, 
         });
             const s3 = new AWS.S3({
               params: {
@@ -23,7 +23,7 @@ export async function downloadFromS3(file_key: string){
         return file_name
 
         } catch (error){
-            console.log(error)
+            console.error(error)
             return null;
         }
 }
