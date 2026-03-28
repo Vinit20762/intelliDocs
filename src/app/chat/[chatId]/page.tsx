@@ -7,9 +7,7 @@ import { redirect } from 'next/navigation';
 import React from 'react';
 
 type Props = {
-  params: {
-     chatId: string 
-    };
+  params: Promise<{ chatId: string }>;
 };
 
 const ChatPage = async (props: Props) => {

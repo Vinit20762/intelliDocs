@@ -112,7 +112,6 @@ async function prepareDocument(page: PDFPage) {
 
 async function chunkedUpsert(
   index: ReturnType<Pinecone['index']>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   vectors: { id: string; values: number[]; metadata?: Record<string, any> }[],
   namespace: string,
   chunkSize = 10
