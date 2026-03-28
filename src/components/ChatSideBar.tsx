@@ -3,8 +3,11 @@
 import { DrizzleChat } from '@/lib/db/schema'
 import React from 'react'
 import Link from 'next/link'
-import { MessageCircle, PlusCircle, Home, FileText, PanelLeftClose } from 'lucide-react'
+import { MessageCircle, PlusCircle, Home, FileText, PanelLeftClose, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import axios from 'axios'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 type Props = {
   chats: DrizzleChat[],
@@ -12,7 +15,28 @@ type Props = {
   onClose?: () => void,
 }
 
-const ChatSideBar = ({ chats, chatId, onClose }: Props) => {
+const ChatSideBar = ({ chats: initialChats, chatId, onClose }: Props) => {
+  const router = useRouter()
+  const [chats, setChats] = React.useState(initialChats)
+  const [deletingId, setDeletingId] = React.useState<number | null>(null)
+
+  const handleDelete = async (e: React.MouseEvent, id: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    setDeletingId(id)
+    try {
+      await axios.delete('/api/delete-chat', { data: { chatId: id } })
+      toast.success('Chat deleted')
+      setChats(prev => prev.filter(c => c.id !== id))
+      if (id === chatId) router.push('/')
+    } catch {
+      toast.error('Failed to delete chat')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <div className='w-full h-screen flex flex-col bg-gray-950 text-gray-200'>
 
@@ -62,6 +86,22 @@ const ChatSideBar = ({ chats, chatId, onClose }: Props) => {
             >
               <MessageCircle className={cn('w-4 h-4 shrink-0', chat.id === chatId ? 'text-white' : 'text-gray-500 group-hover:text-gray-300')} />
               <p className='text-sm truncate flex-1'>{chat.pdfName}</p>
+
+              {/* Delete button — appears on hover */}
+              <button
+                onClick={(e) => handleDelete(e, chat.id)}
+                disabled={deletingId === chat.id}
+                className={cn(
+                  'shrink-0 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-all duration-150',
+                  chat.id === chatId
+                    ? 'hover:bg-blue-500 text-blue-100'
+                    : 'hover:bg-red-500/20 text-gray-500 hover:text-red-400',
+                  deletingId === chat.id && 'opacity-100 animate-pulse'
+                )}
+                title='Delete chat'
+              >
+                <Trash2 className='w-3.5 h-3.5' />
+              </button>
             </div>
           </Link>
         ))}

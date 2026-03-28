@@ -37,7 +37,7 @@ export default async function Home() {
               </Link>
             )}
           </div>
-           <p className="max-w-xl mt-1 text-lg text-slate-600">
+          <p className="max-w-xl mt-1 text-lg text-slate-600">
             Join millions of students, researchers and professionals to instantly
             answer questions and understand research with AI
           </p>
@@ -46,7 +46,7 @@ export default async function Home() {
               <FileUplaod />
             ) : (
               <Link href="/sign-in">
-                <Button className="hover: cursor-pointer">Login to get Started!
+                <Button className="hover:cursor-pointer">Login to get Started!
                   <LogIn />
                 </Button>
               </Link>
@@ -55,6 +55,5 @@ export default async function Home() {
         </div>
       </div>
     </div>
-    
   );
 }
