@@ -18,7 +18,7 @@ export async function downloadFromS3(file_key: string){    //this file only run 
         };
 
         const obj = await s3.getObject(params).promise()
-        const file_name = `./temp/pdf-${Date.now()}.pdf`
+        const file_name = `/tmp/pdf-${Date.now()}.pdf`
         fs.writeFileSync(file_name, obj.Body as Buffer)
         return file_name
 
