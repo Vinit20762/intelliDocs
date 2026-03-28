@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "intelliDocs",
+  icons: {
+    icon: "/Logo.svg",
+  },
 };
 
 export default function RootLayout({

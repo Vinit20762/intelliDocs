@@ -6,6 +6,7 @@ import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { desc, eq } from "drizzle-orm";
 import { LogIn } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default async function Home() {
@@ -26,6 +27,15 @@ export default async function Home() {
     <div className="w-screen min-h-screen bg-gradient-to-r from-rose-100 to-teal-100">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
         <div className="flex flex-col items-center text-center">
+
+          {/* Logo + name */}
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-10 h-10 rounded-xl overflow-hidden bg-white shadow flex items-center justify-center">
+              <Image src="/Logo.svg" alt="intelliDocs" width={36} height={36} className="object-contain" />
+            </div>
+            <span className="text-2xl font-bold text-gray-800 tracking-tight">intelliDocs</span>
+          </div>
+
           <div className="flex items-center">
             <h1 className="mr-3 text-5xl font-semibold">Chat with any PDF</h1>
             <UserButton />

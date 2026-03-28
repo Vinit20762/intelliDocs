@@ -3,19 +3,21 @@
 import { DrizzleChat } from '@/lib/db/schema'
 import React from 'react'
 import Link from 'next/link'
-import { MessageCircle, PlusCircle, Home, FileText, PanelLeftClose, Trash2 } from 'lucide-react'
+import { MessageCircle, PlusCircle, Home, PanelLeftClose, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import Image from 'next/image'
 
 type Props = {
-  chats: DrizzleChat[],
-  chatId: number,
-  onClose?: () => void,
+  chats: DrizzleChat[]
+  chatId: number
+  isOpen: boolean
+  onToggle: () => void
 }
 
-const ChatSideBar = ({ chats: initialChats, chatId, onClose }: Props) => {
+const ChatSideBar = ({ chats: initialChats, chatId, isOpen, onToggle }: Props) => {
   const router = useRouter()
   const [chats, setChats] = React.useState(initialChats)
   const [deletingId, setDeletingId] = React.useState<number | null>(null)
@@ -23,7 +25,6 @@ const ChatSideBar = ({ chats: initialChats, chatId, onClose }: Props) => {
   const handleDelete = async (e: React.MouseEvent, id: number) => {
     e.preventDefault()
     e.stopPropagation()
-
     setDeletingId(id)
     try {
       await axios.delete('/api/delete-chat', { data: { chatId: id } })
@@ -37,34 +38,74 @@ const ChatSideBar = ({ chats: initialChats, chatId, onClose }: Props) => {
     }
   }
 
+  /* ── COLLAPSED: icon-only strip ── */
+  if (!isOpen) {
+    return (
+      <div className='w-14 h-screen flex flex-col items-center bg-gray-950 py-3 gap-1'>
+
+        {/* Logo — cursor-e-resize signals "expand" */}
+        <button
+          onClick={onToggle}
+          className='w-9 h-9 rounded-xl overflow-hidden bg-white flex items-center justify-center mb-3 cursor-e-resize hover:ring-2 hover:ring-blue-500 transition-all'
+          title='Expand sidebar'
+        >
+          <Image src='/Logo.svg' alt='IntelliDocs' width={28} height={28} className='object-contain' />
+        </button>
+
+        {/* New Chat */}
+        <Link href='/'>
+          <button
+            className='w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer transition-all'
+            title='New Chat'
+          >
+            <PlusCircle className='w-5 h-5' />
+          </button>
+        </Link>
+
+        {/* Spacer */}
+        <div className='flex-1' />
+
+        {/* Home — same color/size as New Chat */}
+        <Link href='/'>
+          <button
+            className='w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 cursor-pointer transition-all'
+            title='Home'
+          >
+            <Home className='w-5 h-5' />
+          </button>
+        </Link>
+
+      </div>
+    )
+  }
+
+  /* ── EXPANDED: full sidebar ── */
   return (
     <div className='w-full h-screen flex flex-col bg-gray-950 text-gray-200'>
 
       {/* Branding */}
       <div className='px-4 py-4 border-b border-gray-800'>
         <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-2'>
-            <div className='w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center'>
-              <FileText className='w-4 h-4 text-white' />
+          <Link href='/' className='flex items-center gap-2.5 cursor-pointer'>
+            <div className='w-8 h-8 rounded-xl overflow-hidden bg-white flex items-center justify-center shadow-sm'>
+              <Image src='/Logo.svg' alt='IntelliDocs' width={28} height={28} className='object-contain' />
             </div>
-            <span className='font-bold text-white text-base tracking-tight'>IntelliDocs</span>
-          </div>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className='text-gray-500 hover:text-gray-200 transition-colors p-1 rounded-md hover:bg-gray-800'
-              title='Collapse sidebar'
-            >
-              <PanelLeftClose className='w-4 h-4' />
-            </button>
-          )}
+            <span className='font-bold text-white text-base tracking-tight'>intelliDocs</span>
+          </Link>
+          <button
+            onClick={onToggle}
+            className='text-gray-500 hover:text-gray-200 transition-colors p-1 rounded-md hover:bg-gray-800 cursor-pointer'
+            title='Collapse sidebar'
+          >
+            <PanelLeftClose className='w-4 h-4' />
+          </button>
         </div>
       </div>
 
       {/* New Chat Button */}
       <div className='px-3 pt-4 pb-2'>
         <Link href='/'>
-          <button className='w-full flex items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600 px-3 py-2.5 text-sm text-gray-400 hover:text-white hover:border-gray-400 hover:bg-gray-800 transition-all duration-150'>
+          <button className='w-full flex items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600 px-3 py-2.5 text-sm text-gray-400 hover:text-white hover:border-gray-400 hover:bg-gray-800 cursor-pointer transition-all duration-150'>
             <PlusCircle className='w-4 h-4' />
             New Chat
           </button>
@@ -76,18 +117,14 @@ const ChatSideBar = ({ chats: initialChats, chatId, onClose }: Props) => {
         <p className='px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wider'>Recent</p>
         {chats.map(chat => (
           <Link key={chat.id} href={`/chat/${chat.id}`}>
-            <div
-              className={cn(
-                'group flex items-center gap-2.5 rounded-lg px-3 py-2.5 cursor-pointer transition-all duration-150',
-                chat.id === chatId
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-gray-100'
-              )}
-            >
+            <div className={cn(
+              'group flex items-center gap-2.5 rounded-lg px-3 py-2.5 cursor-pointer transition-all duration-150',
+              chat.id === chatId
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-gray-100'
+            )}>
               <MessageCircle className={cn('w-4 h-4 shrink-0', chat.id === chatId ? 'text-white' : 'text-gray-500 group-hover:text-gray-300')} />
               <p className='text-sm truncate flex-1'>{chat.pdfName}</p>
-
-              {/* Delete button — appears on hover */}
               <button
                 onClick={(e) => handleDelete(e, chat.id)}
                 disabled={deletingId === chat.id}
@@ -109,12 +146,10 @@ const ChatSideBar = ({ chats: initialChats, chatId, onClose }: Props) => {
 
       {/* Footer */}
       <div className='px-4 py-3 border-t border-gray-800'>
-        <div className='flex items-center gap-3 text-xs text-gray-500'>
-          <Link href='/' className='flex items-center gap-1.5 hover:text-gray-300 transition-colors'>
-            <Home className='w-3.5 h-3.5' />
-            Home
-          </Link>
-        </div>
+        <Link href='/' className='flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 cursor-pointer transition-colors'>
+          <Home className='w-4 h-4' />
+          Home
+        </Link>
       </div>
 
     </div>
