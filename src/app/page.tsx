@@ -59,7 +59,7 @@ export default async function Home() {
               <FileUplaod />
             ) : (
               <Link href="/sign-in">
-                <Button className="w-full hover:cursor-pointer">Login to get Started!
+                <Button className="w-full md:w-auto hover:cursor-pointer">Login to get Started!
                   <LogIn />
                 </Button>
               </Link>
