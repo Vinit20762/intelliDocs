@@ -66,6 +66,7 @@ export async function POST(req: Request) {
     });
 
     // cast response to any to satisfy OpenAIStream typing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stream = OpenAIStream(response as any, {
       async onCompletion(completion) {
         // Save AI completion after streaming

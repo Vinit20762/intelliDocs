@@ -92,7 +92,8 @@ export const truncateStringByBytes = (str: string, bytes: number) => {
 
 // Prepare each PDF page by cleaning and splitting into smaller documents @pinecone-database/doc-splitter gives utility fucntion to help split out document
 async function prepareDocument(page: PDFPage) {
-  let { pageContent, metadata } = page;
+  let { pageContent } = page;
+  const { metadata } = page;
   pageContent = pageContent.replace(/\n/g, '');
 
   //split the docs into smaller chunks
@@ -111,7 +112,7 @@ async function prepareDocument(page: PDFPage) {
 
 async function chunkedUpsert(
   index: ReturnType<Pinecone['index']>,
-  vectors: { id: string; values: number[]; metadata?: Record<string, any> }[],
+  vectors: { id: string; values: number[]; metadata?: Record<string, unknown> }[],
   namespace: string,
   chunkSize = 10
 ) {

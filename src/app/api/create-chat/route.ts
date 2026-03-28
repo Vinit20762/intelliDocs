@@ -5,7 +5,7 @@ import { getS3Url } from "@/lib/s3";
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
-export async function POST(req: Request, res: Response ) {
+export async function POST(req: Request) {
     const { userId } = await auth();    //it will give the user id of the logged in user
     if (!userId) {
         return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -39,11 +39,11 @@ export async function POST(req: Request, res: Response ) {
         {
             status: 200
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error in create-chat:', error);
-        
+
         // Provide more specific error messages
-        const errorMessage = error.message || "An unknown error occurred";
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
         return NextResponse.json({ 
             error: "Failed to process PDF",
             details: errorMessage

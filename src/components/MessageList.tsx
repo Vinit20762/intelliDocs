@@ -29,7 +29,7 @@ const MessageList = ({ messages, isLoading, isAiThinking }: Props) => {
                 </div>
                 <div>
                     <p className='text-sm font-medium text-gray-700'>Ask me anything</p>
-                    <p className='text-xs text-gray-400 mt-0.5'>I'll answer based on your PDF document</p>
+                    <p className='text-xs text-gray-400 mt-0.5'>I&apos;ll answer based on your PDF document</p>
                 </div>
             </div>
         )
