@@ -1,12 +1,26 @@
 import { db } from "@/lib/db"
-import { messages } from "@/lib/db/schema"
+import { chats, messages } from "@/lib/db/schema"
+import { auth } from "@clerk/nextjs/server"
 import { eq } from "drizzle-orm"
 import { NextResponse } from "next/server"
 
+export const POST = async (req: Request) => {
+    const { userId } = await auth()
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-export const POST = async(req: Request) => {
     const { chatId } = await req.json()
-    const _messages = await db.select().from(messages).where(eq(messages.chatId, chatId));
+    if (!chatId) {
+        return NextResponse.json({ error: "chatId is required" }, { status: 400 })
+    }
 
-    return NextResponse.json(_messages);
+    // Verify this chat belongs to the requesting user
+    const chat = await db.select().from(chats).where(eq(chats.id, chatId))
+    if (!chat.length || chat[0].userId !== userId) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 })
+    }
+
+    const _messages = await db.select().from(messages).where(eq(messages.chatId, chatId))
+    return NextResponse.json(_messages)
 }

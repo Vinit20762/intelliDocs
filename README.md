@@ -1,27 +1,47 @@
-# IntelliDocs — Chat with any PDF using AI
+# intelliDocs — Chat with any PDF using AI
 
-IntelliDocs is an AI-powered SaaS that lets you upload any PDF and have a natural conversation with it. Ask questions, get summaries, and extract insights — all powered by GPT-4 and Retrieval-Augmented Generation (RAG).
+intelliDocs is an AI-powered SaaS that lets you upload any PDF and have a natural conversation with it. Ask questions, get summaries, and extract insights — all powered by GPT-4 and Retrieval-Augmented Generation (RAG).
+
+> **Live:** [intellidocs.vercel.app](https://intellidocs.vercel.app) &nbsp;·&nbsp; Built by [Vinit Raj Singh](https://github.com/Vinit20762)
 
 ---
 
 ## Features
 
-- **PDF Upload** — Drag and drop any PDF (up to 10MB), stored securely on AWS S3
+### Core
+- **PDF Upload** — Drag and drop any PDF (up to 10 MB), stored securely on AWS S3
 - **AI Chat** — Ask questions about your PDF in natural language, powered by GPT-4
 - **Streaming Responses** — Real-time token-by-token streaming via Vercel AI SDK
-- **Chat History** — All conversations are persisted and accessible from the sidebar
-- **Multi-document** — Upload and switch between multiple PDFs, each with its own chat
-- **Delete Chats** — Permanently remove a chat and its PDF from S3 and the database
-- **Authentication** — Secure user auth with Clerk (sign in, sign up, session management)
-- **Collapsible Sidebar** — Full/icon-only sidebar with smooth transitions
-- **Thinking Indicator** — Animated typing dots while the AI is generating a response
+- **RAG Pipeline** — Answers are grounded in your document using vector similarity search (Pinecone + OpenAI embeddings)
+- **Chat History** — All conversations are persisted in PostgreSQL and accessible from the sidebar
+- **Multi-document** — Upload multiple PDFs, each with its own independent chat session
+- **Delete Chats** — Permanently removes the chat, messages, and the PDF from S3
+
+### UI / UX
+- **Collapsible Sidebar** — Full or icon-only sidebar with smooth transitions (ChatGPT-style)
+- **Mobile Responsive** — Dedicated mobile layout with hamburger menu and PDF/Chat toggle
+- **AI Thinking Indicator** — Animated bouncing dots while GPT-4 is generating a response
+- **PDF Viewer** — Inline PDF viewer alongside the chat panel
+- **Toast Notifications** — Upload success, errors, and chat creation feedback
+
+### Access Control & Plans
+- **Free Plan** — 3 PDF uploads and 5 messages per document
+- **Server-enforced limits** — All limits checked on the API with DB counts (not client-side)
+- **Ownership verification** — Every API route verifies the requesting user owns the resource
+- **Upgrade Modal** — Premium UI prompt when a limit is reached, with Free vs Pro comparison
+- **Pricing Page** — Animated pricing page with monthly/quarterly toggle (Pro plan coming soon)
+
+### Legal & Profile
+- **Terms & Conditions** — Full legal page at `/terms`
+- **Privacy Policy** — Full legal page at `/privacy`
+- **Footer** — Landing page footer with legal links, pricing, and social links
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
+|---|---|
 | Framework | Next.js 15 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
@@ -33,6 +53,7 @@ IntelliDocs is an AI-powered SaaS that lets you upload any PDF and have a natura
 | Embeddings | OpenAI text-embedding-ada-002 |
 | AI SDK | Vercel AI SDK + LangChain |
 | Data Fetching | TanStack React Query |
+| Animations | Framer Motion + tw-animate-css |
 
 ---
 
@@ -44,8 +65,8 @@ IntelliDocs is an AI-powered SaaS that lets you upload any PDF and have a natura
 │                                                             │
 │  ┌──────────┐   ┌──────────────┐   ┌────────────────────┐  │
 │  │ Sidebar  │   │  PDF Viewer  │   │    Chat Panel      │  │
-│  │ (chats)  │   │ (Google Docs │   │  (messages +       │  │
-│  │          │   │   iframe)    │   │   input form)      │  │
+│  │ (chats)  │   │  (iframe)    │   │  (messages +       │  │
+│  │          │   │              │   │   input form)      │  │
 │  └──────────┘   └──────────────┘   └────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
          │                                      │
@@ -67,9 +88,9 @@ IntelliDocs is an AI-powered SaaS that lets you upload any PDF and have a natura
     │   PDF Processing        │
     │                         │
     │  1. Download from S3    │
-    │  2. Parse with pdf-parse│
+    │  2. Parse (pdf-parse +  │
+    │     LangChain)          │
     │  3. Split into chunks   │
-    │     (LangChain)         │
     │  4. Embed each chunk    │
     │     (OpenAI ada-002)    │
     │  5. Upsert to Pinecone  │
@@ -130,7 +151,7 @@ PDF uploaded by user
   Upload to AWS S3
         │
         ▼
-  Download from S3 (server-side)
+  Download from S3 (server-side, written to /tmp)
         │
         ▼
   Parse PDF into pages (pdf-parse + LangChain PDFLoader)
@@ -145,12 +166,26 @@ PDF uploaded by user
         │
         ▼
   Upsert vectors into Pinecone
-  (namespace = S3 file key)
+  (namespace = S3 file key, chunked in batches of 10)
         │
         ▼
   Save chat record in Neon DB
   Redirect user to /chat/[id]
 ```
+
+---
+
+## Security
+
+All limits and access controls are enforced **server-side**:
+
+| Route | Auth | Ownership Check | Limit |
+|---|---|---|---|
+| `POST /api/create-chat` | ✅ Clerk | ✅ userId from server | ✅ 3 PDFs (DB count) |
+| `POST /api/chat` | ✅ Clerk | ✅ chat.userId === userId | ✅ 5 messages (DB count) |
+| `POST /api/get-messages` | ✅ Clerk | ✅ chat.userId === userId | — |
+| `DELETE /api/delete-chat` | ✅ Clerk | ✅ chat.userId === userId | — |
+| `GET /chat/[chatId]` | ✅ Clerk | ✅ redirect if not owner | — |
 
 ---
 
@@ -185,27 +220,34 @@ CREATE TABLE messages (
 src/
 ├── app/
 │   ├── api/
-│   │   ├── chat/            # Streaming GPT-4 chat endpoint
-│   │   ├── create-chat/     # PDF ingestion + chat creation
-│   │   ├── delete-chat/     # Delete chat + S3 file
-│   │   └── get-messages/    # Fetch chat history
-│   ├── chat/[chatId]/       # Chat page (PDF viewer + chat UI)
-│   └── page.tsx             # Landing page
+│   │   ├── chat/            # Streaming GPT-4 chat endpoint (auth + ownership + limit)
+│   │   ├── create-chat/     # PDF ingestion + chat creation (auth + PDF limit)
+│   │   ├── delete-chat/     # Delete chat, messages, and S3 file
+│   │   └── get-messages/    # Fetch chat history (auth + ownership)
+│   ├── chat/[chatId]/       # Chat page — PDF viewer + chat UI
+│   ├── pricing/             # Pricing page (monthly/quarterly toggle)
+│   ├── terms/               # Terms & Conditions page
+│   ├── privacy/             # Privacy Policy page
+│   └── page.tsx             # Landing page with hero + footer
 ├── components/
-│   ├── ChatLayout.tsx       # Three-panel layout with sidebar toggle
-│   ├── ChatSideBar.tsx      # Collapsible sidebar with chat list
-│   ├── ChatComponent.tsx    # Chat input + message stream
-│   ├── MessageList.tsx      # Rendered message bubbles
-│   ├── PDFViewer.tsx        # Google Docs iframe PDF renderer
-│   └── FileUplaod.tsx       # Drag-and-drop PDF uploader
+│   ├── ChatLayout.tsx       # Three-panel layout (sidebar + PDF + chat)
+│   ├── ChatSideBar.tsx      # Collapsible sidebar with chat list + delete
+│   ├── ChatComponent.tsx    # Chat input + streaming + message limit UI
+│   ├── MessageList.tsx      # Message bubbles + AI thinking indicator
+│   ├── PDFViewer.tsx        # Inline PDF renderer (iframe)
+│   ├── FileUplaod.tsx       # Drag-and-drop uploader + PDF usage counter
+│   ├── UpgradeModal.tsx     # Premium upgrade modal (Free vs Pro comparison)
+│   └── ui/
+│       ├── button.tsx       # shadcn Button component
+│       └── intellidocs-pricing.tsx  # Animated pricing cards component
 └── lib/
-    ├── pinecone.ts          # PDF → chunks → embeddings → Pinecone
+    ├── pinecone.ts          # PDF → chunks → embeddings → Pinecone upsert
     ├── embeddings.ts        # OpenAI embedding API wrapper
-    ├── context.ts           # Pinecone similarity search
-    ├── s3.ts                # S3 upload + URL utilities (client)
-    ├── s3-server.ts         # S3 download (server-side)
+    ├── context.ts           # Pinecone vector similarity search
+    ├── s3.ts                # S3 upload + URL helpers (client-side)
+    ├── s3-server.ts         # S3 download to /tmp (server-side)
     └── db/
-        ├── index.ts         # Neon DB connection via Drizzle
+        ├── index.ts         # Neon DB connection via Drizzle ORM
         └── schema.ts        # chats + messages table definitions
 ```
 
@@ -258,4 +300,6 @@ Deployed on **Vercel**. Every push to `main` triggers an automatic redeployment.
 
 ---
 
-Built by [Vinit Raj Singh](https://github.com/Vinit20762)
+Built by [Vinit Raj Singh](https://github.com/Vinit20762) &nbsp;·&nbsp;
+[LinkedIn](https://www.linkedin.com/in/vinit-raj-singh-0312b5286/) &nbsp;·&nbsp;
+[vinitrajsingh5555@gmail.com](mailto:vinitrajsingh5555@gmail.com)

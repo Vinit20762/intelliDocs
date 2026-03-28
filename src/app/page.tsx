@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { chats } from "@/lib/db/schema";
 import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import { LogIn, Mail } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,17 +14,18 @@ export default async function Home() {
   const isAuth = !!userId;
 
   let firstChat;
+  let chatCount = 0;
   if (userId) {
-    firstChat = await db
-      .select()
-      .from(chats)
-      .where(eq(chats.userId, userId))
-      .orderBy(desc(chats.createdAt))
-      .limit(1);
+    const [countResult, recentChat] = await Promise.all([
+      db.select({ value: count() }).from(chats).where(eq(chats.userId, userId)),
+      db.select().from(chats).where(eq(chats.userId, userId)).orderBy(desc(chats.createdAt)).limit(1),
+    ]);
+    chatCount = countResult[0].value;
+    firstChat = recentChat;
   }
 
   return (
-    <div className="w-screen min-h-screen bg-gradient-to-r from-rose-100 to-teal-100 flex flex-col">
+    <div className="w-full min-h-screen bg-gradient-to-r from-rose-100 to-teal-100 flex flex-col overflow-x-hidden">
 
       {/* Hero */}
       <div className="min-h-screen flex items-center justify-center px-4 py-12">
@@ -47,7 +48,7 @@ export default async function Home() {
             <div className="flex mt-2">
               {isAuth && firstChat && firstChat.length > 0 && (
                 <Link href={`/chat/${firstChat[0].id}`}>
-                  <Button className="hover:cursor-pointer">Go to Chat</Button>
+                  <Button className="">Go to Chat</Button>
                 </Link>
               )}
             </div>
@@ -59,10 +60,10 @@ export default async function Home() {
 
             <div className="w-full mt-4">
               {isAuth ? (
-                <FileUplaod />
+                <FileUplaod chatCount={chatCount} />
               ) : (
                 <Link href="/sign-in">
-                  <Button className="w-full md:w-auto hover:cursor-pointer">Login to get Started!
+                  <Button className="w-full md:w-auto ">Login to get Started!
                     <LogIn />
                   </Button>
                 </Link>
@@ -92,9 +93,12 @@ export default async function Home() {
               </p>
             </div>
 
-            {/* Legal links */}
+            {/* Links */}
             <div className="flex flex-col items-center md:items-start gap-1.5">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Legal</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Product</p>
+              <Link href="/pricing" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                Pricing
+              </Link>
               <Link href="/terms" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
                 Terms &amp; Conditions
               </Link>
