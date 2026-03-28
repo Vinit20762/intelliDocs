@@ -11,16 +11,15 @@ import axios from 'axios'
 type Props = { chatId: number }
 
 const ChatComponent = ({ chatId }: Props) => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading: isLoadingMessages } = useQuery({
     queryKey: ['chat', chatId],
     queryFn: async () => {
       const response = await axios.post<Message[]>('/api/get-messages', { chatId })
-      console.log("Fetched Messages:", response.data);
       return response.data
     }
   })
 
-  const { input, handleInputChange, handleSubmit, messages, setMessages } = useChat({
+  const { input, handleInputChange, handleSubmit, messages, setMessages, isLoading: isAiThinking } = useChat({
     api: '/api/chat',
     body: { chatId },
   });
@@ -38,28 +37,44 @@ const ChatComponent = ({ chatId }: Props) => {
   }, [messages])
 
   return (
-    <div className='relative max-h-screen overflow-hidden flex flex-col'>
-      <div className='sticky top-0 inset-x-0 bg-white p-2 h-fit'>
-        <h3 className='text-xl font-bold'>Chat</h3>
-      </div>
+    <div className='relative h-screen overflow-hidden flex flex-col bg-white'>
 
-      <div id='message-container' className='flex-1 overflow-y-auto bg-gray-50 p-4 space-y-4'>
-        <MessageList messages={messages} isLoading={isLoading} />
-      </div>
-
-      <form onSubmit={handleSubmit} className='sticky bottom-0 inset-x-0 px-2 py-4 bg-white'>
-        <div className='flex'>
-          <Input 
-            value={input}
-            onChange={handleInputChange}
-            placeholder='Ask your queries...'
-            className='w-full'
-          />
-          <Button className='bg-blue-600 ml-2'>
-            <Send className='h-4 w-4' />
-          </Button>
+      {/* Header */}
+      <div className='shrink-0 px-4 py-3 border-b border-gray-100 bg-white'>
+        <div className='flex items-center gap-2'>
+          <div className='w-2 h-2 rounded-full bg-green-500'></div>
+          <h3 className='text-sm font-semibold text-gray-800'>intelliDoc Agent</h3>
         </div>
-      </form>
+        <p className='text-xs text-gray-400 mt-0.5'>Ask anything about your document</p>
+      </div>
+
+      {/* Messages */}
+      <div id='message-container' className='flex-1 overflow-y-auto py-4'>
+        <MessageList messages={messages} isLoading={isLoadingMessages} isAiThinking={isAiThinking} />
+      </div>
+
+      {/* Input */}
+      <div className='shrink-0 px-3 py-3 border-t border-gray-100 bg-white'>
+        <form onSubmit={handleSubmit}>
+          <div className='flex items-center gap-2 bg-gray-50 rounded-xl border border-gray-200 px-3 py-2 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-50 transition-all'>
+            <Input
+              value={input}
+              onChange={handleInputChange}
+              placeholder='Ask about your document...'
+              className='flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 text-sm placeholder:text-gray-400 p-0 h-auto'
+            />
+            <Button
+              type='submit'
+              size='icon'
+              disabled={!input.trim()}
+              className='w-7 h-7 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 shrink-0'
+            >
+              <Send className='h-3.5 w-3.5' />
+            </Button>
+          </div>
+        </form>
+      </div>
+
     </div>
   )
 }

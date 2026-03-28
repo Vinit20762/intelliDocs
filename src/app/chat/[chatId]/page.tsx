@@ -1,10 +1,8 @@
-import ChatComponent from '@/components/ChatComponent';
-import ChatSideBar from '@/components/ChatSideBar';
-import PDFViewer from '@/components/PDFViewer';
+import ChatLayout from '@/components/ChatLayout';
 import { db } from '@/lib/db';
 import { chats } from '@/lib/db/schema';
 import { auth } from '@clerk/nextjs/server';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import React from 'react';
 
@@ -24,7 +22,7 @@ const ChatPage = async (props: Props) => {
     return redirect('/sign-in');
   }
 
-  const _chats = await db.select().from(chats).where(eq(chats.userId, userId));
+  const _chats = await db.select().from(chats).where(eq(chats.userId, userId)).orderBy(desc(chats.createdAt));
   if(!_chats){
     return redirect('/');
   }
@@ -36,25 +34,11 @@ const ChatPage = async (props: Props) => {
   const currentChat = _chats.find(chat => chat.id === parseInt(chatId))
 
   return (
-    <div className="flex max-h-screen overflow-scroll">
-      <div className="flex w-full max-h-screen overflow-scroll">
-        
-        {/* chat sidebar */}
-        <div className="flex-[1] max-w-xs">
-          <ChatSideBar chats={_chats} chatId={parseInt(chatId)} />
-        </div>
-
-        {/* main pdf viewer */}
-        <div className="max-h-screen p-4 overflow-scroll flex-[5]">
-          <PDFViewer pdf_url={currentChat?.pdfUrl || ''} />
-        </div>
-
-        {/* chat component */}
-        <div className="flex-[3] border-l-4 border-l-slate-200">
-          <ChatComponent chatId={parseInt(chatId)} />
-        </div>
-      </div>
-    </div>
+    <ChatLayout
+      chats={_chats}
+      chatId={parseInt(chatId)}
+      pdfUrl={currentChat?.pdfUrl || ''}
+    />
   );
 };
 
